@@ -1,0 +1,10 @@
+{% macro reloaded(interval=1.0, url='/reloaded/') -%}
+	<!-- inserted by reloaded. have a nice day! -->
+	<script src="{{ url_for('reloaded.static', filename='js/reloaded.js') }}"></script>
+	<script>
+		reloaded({
+			url: "{{ url }}",
+			interval: {{ interval }}
+		}).start()
+	</script>
+{%- endmacro %}
