@@ -13,7 +13,6 @@ from flask.ext.reloaded import Reloaded
 
 # create the app
 app = Flask(__name__, static_url_path="/static")
-app.debug = True
 
 # wrap the app
 Reloaded(app)

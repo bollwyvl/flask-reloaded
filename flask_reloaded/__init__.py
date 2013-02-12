@@ -118,9 +118,10 @@ class Reloaded(object):
                             if os.path.isfile(filename):
                                 reloaded_files += [filename]
 
-                kwargs['extra_files'] = reloaded_files.extend(
-                    kwargs.get('extra_files', [])
-                )
+                reloaded_files.extend(kwargs.get('extra_files', []))
+                
+                # patch up the old extra_files
+                kwargs['extra_files'] = reloaded_files
 
             _old_run(*args, **kwargs)
 
