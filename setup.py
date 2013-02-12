@@ -16,13 +16,13 @@ setup(
     author='Nicholas Bollweg',
     author_email='nicholas.bollweg@gtri.gatech.edu',
     description='Refresh your browser when you change CSS, JS, templates.',
-    long_description=__doc__,
+    long_description=read('README.md'),
     packages=['flask_reloaded'],
     zip_safe=False,
     include_package_data=True,
     platforms='any',
     install_requires=[
-        'Flask'
+        'Flask>=0.8'
     ],
     classifiers=[
         'Environment :: Web Environment',

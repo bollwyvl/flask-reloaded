@@ -1,6 +1,7 @@
 import sys
 import os
 
+# this is hackish, you won't need it!
 sys.path.append(os.path.join("..", os.path.dirname(__file__)))
 
 from flask import (
@@ -8,7 +9,7 @@ from flask import (
     render_template,
 )
 
-from reloaded import Reloaded
+from flask.ext.reloaded import Reloaded
 
 # create the app
 app = Flask(__name__, static_url_path="/static")

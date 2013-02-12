@@ -1,0 +1,3 @@
+recursive-include flask_reloaded/static *
+recursive-include flask_reloaded/templates *.html
+include README.md
