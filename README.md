@@ -26,8 +26,8 @@ Use as normal. See the API section for more goodies.
 
 ## Template Macro
 There's probably some magic way to inject random content into your page, (see
-Debugpanel integration!) but for the time being flask-reloaded needs to be
-invoked as a Jinja2 macro in your template. At the top of the template, add:
+Flask Debug-toolbar integration!) but for the time being flask-reloaded needs to
+be invoked as a Jinja2 macro in your template. At the top of the template, add:
 
     {% from 'reloaded/macros.html' import reloaded %}
 
@@ -35,10 +35,10 @@ then put it someplace in `<body>` or `<head>`:
 
     {{ reloaded() }}
 
-## [Flask-Debugpanel](http://github.com/mgood/flask-debugpanel) integration
-You can use Reloaded with the excellent Flask-Degubpanel. Check out the full
-example in `example/panel/app.py`. Make sure you have installed Debupanel, and
-specify the Reloaded panel:
+## [Flask Debug-toolbar](https://github.com/mgood/flask-debugtoolbar) integration
+You can use Reloaded with the excellent Flask Debug-toolbar. Check out the full
+example in `example/panel/app.py`. Make sure you have installed Flask
+Debug-toolbar, and specify the Reloaded panel:
 
     app.config['DEBUG_TB_PANELS'] = (
         # ...
@@ -50,9 +50,9 @@ Though you still have to use Reloaded...
     DebugToolbarExtension(app)
     reloaded = Reloaded(app)
     
-...you _don't_ need the macro, as Debugpanel does a great job of injecting
-itself automagically. Plus, you might need to override some settings, and want
-to use the defaults.
+...you _don't_ need the macro, as Flask Debug-toolbar does a great job of
+injecting itself automagically. Plus, you might need to override some settings,
+and want to use the defaults.
 
 ## API    
     
