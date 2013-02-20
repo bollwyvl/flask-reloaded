@@ -16,7 +16,7 @@ setup(
     author='Nicholas Bollweg',
     author_email='nicholas.bollweg@gtri.gatech.edu',
     description='Refresh your browser when you change CSS, JS, templates.',
-    long_description=read('README.md'),
+    long_description=open('README.md', 'r').read(),
     packages=['flask_reloaded'],
     zip_safe=False,
     include_package_data=True,
@@ -24,6 +24,11 @@ setup(
     install_requires=[
         'Flask>=0.8'
     ],
+    extras_require={
+        'websockets': [
+            'gevent-websocket>=0.3.6'
+        ],
+    },
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: Developers',

@@ -11,18 +11,29 @@ from flask import (
     render_template,
 )
 
+from flask.ext.debugtoolbar import DebugToolbarExtension
 from flask.ext.reloaded import Reloaded
 
 # create the app
 app = Flask(__name__, static_url_path="/static")
+app.debug = True
+
+app.config['SECRET_KEY'] = 'totallyinsecure'
+
+app.config['DEBUG_TB_PANELS'] = (
+    'flask_reloaded.panels.ReloadedDebugPanel',
+    'flask_debugtoolbar.panels.headers.HeaderDebugPanel',
+    'flask_debugtoolbar.panels.logger.LoggingPanel',
+    'flask_debugtoolbar.panels.timer.TimerDebugPanel',
+)
 
 # wrap the app
 Reloaded(app)
-
+DebugToolbarExtension(app)
 
 @app.route('/')
 def hello_world():
     return render_template("hello.html")
 
 if __name__ == "__main__":
-    app.run(use_reloader=True)
+    app.run()

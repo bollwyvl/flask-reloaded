@@ -1,10 +1,14 @@
-{% macro reloaded(interval=1.0) -%}
+{% macro reloaded(interval=1.0, panel=False) -%}
 	<!-- inserted by reloaded. have a nice day! -->
+	{% if panel %}
+	<script src="{{ url_for('_debug_toolbar.static', filename='js/jquery.js') }}"></script>
+	{% endif %}
 	<script src="{{ url_for('reloaded.static', filename='js/reloaded.js') }}"></script>
 	<script>
-		reloaded({
-			url: "{{ url_for('reloaded.should_reload') }}",
-			interval: {{ interval }}
-		}).start();
+		window.reloader = reloaded()
+			.url("{{ url_for('reloaded.should_reload') }}")
+			.interval({{ interval }})
+            .panel({{ panel|lower }})
+			.init();
 	</script>
 {%- endmacro %}

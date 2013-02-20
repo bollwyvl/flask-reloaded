@@ -3,12 +3,6 @@ import sys
 import time
 from itertools import chain
 
-from werkzeug import serving
-from werkzeug.serving import (
-    _iter_module_files,
-    _log,
-)
-
 from flask import (
     Blueprint,
     jsonify
@@ -22,15 +16,11 @@ class Reloaded(object):
         url_prefix='/reloaded',
         reloaded_files=None,
     ):
-
-        if app is None:
-            return
-
         self.app = app
         self.tmp_file = tmp_file
         self.url_prefix = url_prefix
 
-        reloaded = Blueprint(
+        self.blueprint = Blueprint(
             'reloaded',
             __name__,
             static_folder='static',
@@ -38,18 +28,29 @@ class Reloaded(object):
             static_url_path=app.static_url_path + url_prefix
         )
 
-        @reloaded.route('/')
+        self._finish_init()
+
+        self.app.register_blueprint(self.blueprint, url_prefix=url_prefix)
+
+    def _finish_init(self):
+
+        @self.blueprint.route('/')
         def should_reload():
-            with file(tmp_file, 'a+'):
-                mtime = os.stat(tmp_file).st_mtime
+            with file(self.tmp_file, 'a+'):
+                mtime = os.stat(self.tmp_file).st_mtime
 
             return jsonify({'mtime': mtime})
 
-        self.app.register_blueprint(reloaded, url_prefix=url_prefix)
-        self.patch_reloader()
-        self.patch_run()
+        self._patch_reloader()
+        self._patch_run()
 
-    def patch_reloader(self):
+    def _patch_reloader(self):
+        from werkzeug import serving
+        from werkzeug.serving import (
+            _iter_module_files,
+            _log,
+        )
+
         # lifted from werkzeug.serving
         def _reloader_stat_loop(extra_files=None, interval=1):
             """
@@ -90,7 +91,7 @@ class Reloaded(object):
         # patch the reloader
         serving.reloader_loop = _reloader_stat_loop
 
-    def patch_run(self):
+    def _patch_run(self):
         _old_run = self.app.run
 
         def _hacked_run(*args, **kwargs):
@@ -119,7 +120,7 @@ class Reloaded(object):
                                 reloaded_files += [filename]
 
                 reloaded_files.extend(kwargs.get('extra_files', []))
-                
+
                 # patch up the old extra_files
                 kwargs['extra_files'] = reloaded_files
 

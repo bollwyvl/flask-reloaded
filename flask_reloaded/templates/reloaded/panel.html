@@ -1,0 +1,28 @@
+{% from 'reloaded/macros.html' import reloaded %}
+<style>
+    #fdbt-reloaded label{
+        width: 100px;
+        display: inline-block;
+    }
+</style>
+<form class="fdbt-reloaded">
+	<table>
+	    <thead>
+	        <tr>
+    	        <th>Name</th>
+    	        <th>Setting</th>
+	        </tr>
+	    </thead>
+	    <tbody>
+	        <tr class="flDebugOdd">
+	            <td>Enabled?</td>
+	            <td><input type="checkbox" class="fdbt-reloaded-enabled" /></td>
+	        </tr>
+	        <tr class="flDebugEven">
+	            <td>Interval</td>
+	            <td><input type="number" class="fdbt-reloaded-interval" min="1.0" step=".5" value="1" /></td>
+	        </tr>
+	    </tbody>
+	</table>
+</form>
+{{ reloaded(panel=True) }}

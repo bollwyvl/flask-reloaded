@@ -1,2 +1,4 @@
 .reloaded
 *.pyc
+.project
+.pydevproject
