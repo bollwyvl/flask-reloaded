@@ -28,8 +28,8 @@ app.config['DEBUG_TB_PANELS'] = (
 )
 
 # wrap the app
-Reloaded(app)
 DebugToolbarExtension(app)
+Reloaded(app)
 
 @app.route('/')
 def hello_world():
