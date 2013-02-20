@@ -11,7 +11,7 @@ Right now, this isn't up on PyPi, so the best deal would be to clone the repo,
     pip install .
 
 ## Configuration
-_For a full example, see `example/app.py`._
+_For a full example, see `example/simple/app.py`._
 
 Up around your `import`s, add
 
@@ -37,19 +37,32 @@ then put it someplace in `<body>` or `<head>`:
 
 ## API    
     
-### Python `Reloaded()` arguments
-All arguments are optional.
+### Python `RELOADED_` config options
+All config options are optional, and have fairly sensible defaults.
 
-#### `tmp_file`
+#### `RELOADED_TEMP_FILE`
 The name of the file whose modification time is used to determine whether the
 reloader should reload.
 Default: `.reloaded`.
 
-#### `url_prefix`
+#### `RELOADED_URL_PREFIX`
 A URL fragment that should be appended to the `reloaded` endpoint and all
 static files.
 Default: `/reloaded`    
-    
+
+#### `RELOADED_EXTENSIONS`
+A list of extensions that will trigger a refresh. You can get this list
+from a `Reloaded` instance with `reloaded.default_extensions`.
+Default: `coffee css html jpg js less md png svg swf ttf sass woff`
+
+### `app.run()` arguments
+
+#### `reloaded_files`
+The non-python files to be monitored: python modules are still handled by
+`extra_files`. If you specify this, you'll need to re-add the defaults. You can
+get this list from a `Reloaded` instance with `reloaded.default_paths`.
+Default: the app's `app.static_folder` and `app.template_folder`. 
+
 ### Jinja2 `reloaded()` arguments
 All macro arguments are optional.
 

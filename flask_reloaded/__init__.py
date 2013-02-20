@@ -1,7 +1,18 @@
+"""
+Flask-Reloaded
+
+A kinda-ghetto browser autoreloader for Flask
+"""
 import os
 import sys
 import time
 from itertools import chain
+
+from werkzeug import serving
+from werkzeug.serving import (
+    _iter_module_files,
+    _log,
+)
 
 from flask import (
     Blueprint,
@@ -10,32 +21,41 @@ from flask import (
 
 
 class Reloaded(object):
-    def __init__(self,
-        app=None,
-        tmp_file='.reloaded',
-        url_prefix='/reloaded',
-        reloaded_files=None,
-    ):
-        self.app = app
-        self.tmp_file = tmp_file
-        self.url_prefix = url_prefix
+    """
+    The main class, in the style of http://flask.pocoo.org/docs/extensiondev/
+    """
+    def __init__(self, app=None):
+        """
+        Should somehow support a factory... but probably won't
+        """
+        if app is not None:
+            self.app = app
+            self.init_app(self.app)
+        else:
+            self.app = None
 
-        self.blueprint = Blueprint(
+    def init_app(self, app):
+        """
+        Should somehow support a factory... but probably won't
+        """
+        app.config.setdefault('RELOADED_TEMP_FILE', '.reloaded')
+        app.config.setdefault('RELOADED_URL_PREFIX', '/_reloaded')
+        app.config.setdefault('RELOADED_EXTENSIONS', self.default_extensions)
+
+        blueprint = Blueprint(
             'reloaded',
             __name__,
             static_folder='static',
             template_folder='templates',
-            static_url_path=app.static_url_path + url_prefix
+            static_url_path=app.static_url_path + self.url_prefix
         )
 
-        self._finish_init()
-
-        self.app.register_blueprint(self.blueprint, url_prefix=url_prefix)
-
-    def _finish_init(self):
-
-        @self.blueprint.route('/')
+        @blueprint.route('/')
         def should_reload():
+            """
+            The main view the gives back the mtime of the most recently
+            modified file (stored in RELOADED_TEMP_FILE)
+            """
             with file(self.tmp_file, 'a+'):
                 mtime = os.stat(self.tmp_file).st_mtime
 
@@ -44,14 +64,68 @@ class Reloaded(object):
         self._patch_reloader()
         self._patch_run()
 
-    def _patch_reloader(self):
-        from werkzeug import serving
-        from werkzeug.serving import (
-            _iter_module_files,
-            _log,
-        )
+        self.app.register_blueprint(blueprint, url_prefix=self.url_prefix)
 
-        # lifted from werkzeug.serving
+    @property
+    def default_extensions(self):
+        """
+        A nice list of modern extensions that would trigger a refresh
+        """
+        exts = 'coffee css html jpg js less md png svg swf ttf sass woff'
+        return exts.split(' ')
+
+    @property
+    def default_paths(self):
+        """
+        Returns the static and template directories for the app and all its
+        Blueprints
+        """
+        def rooted(path, obj=None):
+            """
+            Weird path munging on PackageBoundObject
+            """
+            if obj is None:
+                obj = self.app
+
+            return os.path.abspath(
+               os.path.join(obj.root_path, *(path,))
+            )
+
+        yield rooted(self.app.template_folder)
+        yield rooted(self.app.static_folder)
+
+        for bpr in self.app.blueprints.values():
+            if bpr.static_folder:
+                yield rooted(bpr.static_folder, bpr)
+
+            if bpr.template_folder:
+                yield rooted(bpr.template_folder, bpr)
+
+    @property
+    def url_prefix(self):
+        """
+        Where should this live? _reloaded
+        """
+        return self.app.config['RELOADED_URL_PREFIX']
+
+    @property
+    def tmp_file(self):
+        """
+        What is this called? .reloaded
+        """
+        return self.app.config['RELOADED_TEMP_FILE']
+
+    @property
+    def extensions(self):
+        """
+        What extensions do you care about?
+        """
+        return self.app.config['RELOADED_EXTENSIONS']
+
+    def _patch_reloader(self):
+        """
+        lifted from werkzeug.serving
+        """
         def _reloader_stat_loop(extra_files=None, interval=1):
             """
             When this function is run from the main thread, it will force other
@@ -65,6 +139,9 @@ class Reloaded(object):
             mtimes = {}
 
             def touch(fname, times=None):
+                """
+                emulate bash `touch`
+                """
                 with file(fname, 'a+'):
                     os.utime(fname, times)
 
@@ -92,37 +169,52 @@ class Reloaded(object):
         serving.reloader_loop = _reloader_stat_loop
 
     def _patch_run(self):
+        """
+        Add the reloaded files
+        """
         _old_run = self.app.run
 
         def _hacked_run(*args, **kwargs):
-            def rp(*path):
-                return os.path.join(self.app.root_path, *path)
+            """
+            replaces `app.run`, passing through all args
+            """
+            paths = kwargs.get('reloaded_paths', list(self.default_paths))
+            files = []
+            dirs = []
+            exts = self.extensions
 
-            # pass None to not reload... but not sure what you're up to, then
-            reloaded_files = kwargs.get('reloaded_files', [])
-            reloaded_dirs = []
+            def _find_paths(path, files, dirs):
+                """
+                recursively add all found matching files (and their parent dirs)
+                to files and dirs, respectively. not bullet-proof
+                """
+                for dirname, dir_dirs, dir_files in os.walk(path):
+                    for filename in dir_files:
+                        filename = os.path.join(dirname, filename)
+                        ext = filename.split('.')[-1].lower()
+                        if os.path.isfile(filename) and ext in exts:
+                            files.append(filename)
+                            if dirname not in dirs:
+                                dirs.append(dirname)
+                    for dir_path in dir_dirs:
+                        _find_paths(dir_path, files, dirs)
 
-            if not reloaded_files and reloaded_files is not None:
-                # guess that they mean the static folder and templates
-                reloaded_dirs = [
-                    rp(self.app.template_folder),
-                    self.app.static_folder
-                ]
+            for path in paths:
+                _find_paths(path, files, dirs)
 
-            if reloaded_files or reloaded_dirs:
-                reloaded_files += reloaded_dirs[:]
+            files.extend(kwargs.get('extra_files', []))
 
-                for reloaded_dir in reloaded_dirs:
-                    for dirname, dirs, files in os.walk(reloaded_dir):
-                        for filename in files:
-                            filename = os.path.join(dirname, filename)
-                            if os.path.isfile(filename):
-                                reloaded_files += [filename]
+            if files or dirs:
+                print(' ** Will suggest browser reload for:')
+                print('    %s types: %s ' % (len(exts), ' '.join(exts)))
+                print('    %s folders' % (
+                    len(dirs)))
+                print('    %s known files' % len(files))
 
-                reloaded_files.extend(kwargs.get('extra_files', []))
+            files.extend(dirs)
 
-                # patch up the old extra_files
-                kwargs['extra_files'] = reloaded_files
+            # patch up the old extra_files
+            kwargs['extra_files'] = files
 
             _old_run(*args, **kwargs)
 
